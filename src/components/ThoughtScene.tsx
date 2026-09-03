@@ -11,7 +11,7 @@ interface LetterData {
   wordIndex: number;
   position: [number, number, number];
   width: number;
-  seed: number; // unique seed for vibration variation
+  seed: number;
 }
 
 interface ParticleData {
@@ -23,6 +23,11 @@ interface ParticleData {
   color: THREE.Color;
 }
 
+// ── Constants ──────────────────────────────────
+
+const WORD_STAGGER = 0.6; // seconds between each word shattering (slower = more visible)
+const SHATTER_DURATION = 3.0; // seconds for letters to fly apart (slower = more visible)
+
 // ── Jagged vibrating letter mesh ──────────────
 
 function JaggedLetter({
@@ -31,32 +36,36 @@ function JaggedLetter({
   seed,
   tension,
   visible,
-  shatterTime,
-  wordShatterDelay,
+  shatterElapsed,
+  wordDelay,
 }: {
   char: string;
   position: [number, number, number];
   seed: number;
   tension: number;
   visible: boolean;
-  shatterTime: number; // when this word starts shattering
-  wordShatterDelay: number; // 0 = not shattering yet, >0 = seconds since shatter start
+  shatterElapsed: number;
+  wordDelay: number;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const matRef = useRef<THREE.MeshBasicMaterial>(null);
   const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
 
-  // Vibration params unique to this letter
-  const vibFreqX = 10 + seed * 7.3;
-  const vibFreqY = 13 + seed * 5.7;
-  const vibFreqRot = 8 + seed * 4.1;
+  // Slower, more readable vibration frequencies
+  const vibFreqX = 3.0 + seed * 1.2; // was 10 + seed*7.3
+  const vibFreqY = 3.5 + seed * 0.9; // was 13 + seed*5.7
+  const vibFreqRot = 2.0 + seed * 0.7; // was 8 + seed*4.1
   const vibPhaseX = seed * 2.1;
   const vibPhaseY = seed * 3.4;
   const vibPhaseRot = seed * 1.7;
 
-  // Create canvas texture for this single character
+  const isShattering = shatterElapsed >= 0 && shatterElapsed >= wordDelay;
+  const localElapsed = isShattering ? shatterElapsed - wordDelay : -1;
+  const shatterProgress = isShattering ? Math.min(1, localElapsed / SHATTER_DURATION) : 0;
+
+  // Create canvas texture
   useEffect(() => {
-    if (!visible) {
+    if (!visible || (isShattering && shatterProgress >= 0.9)) {
       setTexture(null);
       return;
     }
@@ -66,24 +75,37 @@ function JaggedLetter({
     const size = 128;
     canvas.width = size;
     canvas.height = size;
-
     ctx.clearRect(0, 0, size, size);
 
-    const fontSize = char === " " ? 10 : 56;
+    const fontSize = char === " " ? 10 : 64; // larger text
     ctx.font = `800 ${fontSize}px "Plus Jakarta Sans", "Inter", system-ui, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    // Glow layer — crimson/amber based on tension
-    const glowColor = tension > 0.5 ? "#FF2A55" : "#F59E0B";
+    let glowColor: string;
+    let fillColor: string;
+    if (isShattering && shatterProgress > 0 && shatterProgress < 0.3) {
+      glowColor = "#FFFFFF";
+      fillColor = "#FFFFFF";
+      ctx.shadowBlur = 30 + shatterProgress * 40;
+    } else if (isShattering) {
+      glowColor = "#00F5D4";
+      fillColor = "#B0F5E8";
+      ctx.shadowBlur = 20 * (1 - shatterProgress);
+    } else {
+      // Normal: amber base, crimson at high tension
+      glowColor = tension > 0.5 ? "#FF2A55" : "#F59E0B";
+      fillColor = tension > 0.5 ? "#FFD6D6" : "#FFF7E6";
+      ctx.shadowBlur = 10 + tension * 15;
+    }
+
     ctx.shadowColor = glowColor;
-    ctx.shadowBlur = 12 + tension * 25;
-    ctx.fillStyle = tension > 0.5 ? "#FFD6D6" : "#FFF7E6";
+    ctx.fillStyle = fillColor;
 
     if (char !== " ") {
       ctx.fillText(char, size / 2, size / 2);
-      // Sharper pass on top
-      ctx.shadowBlur = 3 + tension * 8;
+      // Second pass for stronger glow
+      ctx.shadowBlur = 4 + tension * 6;
       ctx.fillText(char, size / 2, size / 2);
     }
 
@@ -91,58 +113,65 @@ function JaggedLetter({
     tex.needsUpdate = true;
     setTexture(tex);
 
-    return () => {
-      tex.dispose();
-    };
-  }, [char, visible, tension > 0.5]); // only re-render texture when tension crosses threshold
+    return () => tex.dispose();
+  }, [char, visible, tension > 0.5, isShattering, Math.floor(shatterProgress * 4)]);
 
-  // Per-frame vibration
+  // Per-frame animation
   useFrame(({ clock }) => {
     if (!meshRef.current || !visible) return;
     const t = clock.getElapsedTime();
 
-    // If this word is currently shattering, fly apart
-    if (wordShatterDelay > 0) {
-      const elapsed = wordShatterDelay;
-      const flySpeed = 3 + seed * 0.5;
-      meshRef.current.position.x = position[0] + (Math.random() - 0.5) * elapsed * flySpeed;
-      meshRef.current.position.y = position[1] + elapsed * (2 + seed * 0.3);
-      meshRef.current.position.z = position[2] + (Math.random() - 0.5) * elapsed * 2;
-      meshRef.current.rotation.x += 0.05 * (seed + 1);
+    if (isShattering) {
+      const speed = 2.5 + seed * 0.6;
+      const direction = new THREE.Vector3(
+        Math.cos(seed * 3.7) * speed,
+        Math.sin(seed * 2.3) * speed * 0.4 + 2.0,
+        Math.sin(seed * 5.1) * speed * 0.2
+      );
+
+      const easeOut = 1 - Math.pow(1 - shatterProgress, 3);
+
+      meshRef.current.position.x = position[0] + direction.x * easeOut;
+      meshRef.current.position.y = position[1] + direction.y * easeOut;
+      meshRef.current.position.z = position[2] + direction.z * easeOut;
+
+      // Slower spin so user can see letters rotating
+      meshRef.current.rotation.x += 0.04 * (seed + 1);
       meshRef.current.rotation.y += 0.03 * (seed + 1);
-      meshRef.current.rotation.z += 0.04 * (seed + 1);
-      // Scale down as it flies away
-      const fade = Math.max(0, 1 - elapsed * 0.8);
+      meshRef.current.rotation.z += 0.025 * (seed + 1);
+
+      // Scale down and fade
+      const fade = Math.max(0, 1 - shatterProgress * 1.1);
       meshRef.current.scale.setScalar(fade);
       if (matRef.current) matRef.current.opacity = fade;
       return;
     }
 
-    // Normal jagged vibration
-    const baseJitter = 0.015 + tension * 0.06;
-    const jitterX = Math.sin(t * vibFreqX + vibPhaseX) * baseJitter * (1 + seed * 0.3);
-    const jitterY = Math.cos(t * vibFreqY + vibPhaseY) * baseJitter * 0.6;
-    const jitterRot = Math.sin(t * vibFreqRot + vibPhaseRot) * baseJitter * 0.15;
+    // ── Gentle jagged vibration — readable but tense ──
+    const baseJitter = 0.008 + tension * 0.02; // much smaller than before
+    const jitterX = Math.sin(t * vibFreqX + vibPhaseX) * baseJitter;
+    const jitterY = Math.cos(t * vibFreqY + vibPhaseY) * baseJitter * 0.5;
+    const jitterRot = Math.sin(t * vibFreqRot + vibPhaseRot) * baseJitter * 0.08;
 
-    // Add high-frequency micro-jitter for "jagged" feel
-    const microJitter = Math.sin(t * 47 + seed * 13) * 0.005 * tension;
+    // Subtle micro-jitter (very gentle)
+    const microJitter = Math.sin(t * 12 + seed * 13) * 0.002 * tension;
 
     meshRef.current.position.x = position[0] + jitterX + microJitter;
     meshRef.current.position.y = position[1] + jitterY;
     meshRef.current.position.z = position[2];
     meshRef.current.rotation.z = jitterRot;
-    meshRef.current.rotation.x = Math.sin(t * 6 + seed * 9) * 0.02 * tension;
+    meshRef.current.rotation.x = Math.sin(t * 2 + seed * 9) * 0.008 * tension;
 
-    // Scale pulsing
-    const scalePulse = 1 + Math.sin(t * 4 + seed * 2) * 0.03 * tension;
+    // Gentle scale pulse
+    const scalePulse = 1 + Math.sin(t * 2 + seed * 2) * 0.015 * tension;
     meshRef.current.scale.setScalar(scalePulse);
   });
 
   if (!visible || !texture) return null;
 
   const isSpace = char === " ";
-  const width = isSpace ? 0.22 : 0.42;
-  const height = 0.55;
+  const width = isSpace ? 0.28 : 0.36; // tighter spacing
+  const height = 0.5;
 
   return (
     <mesh ref={meshRef} position={position}>
@@ -159,23 +188,21 @@ function JaggedLetter({
   );
 }
 
-// ── Word-level particle shatter ────────────────
+// ── Word-level particle burst ──────────────────
 
-function WordParticleShatter({
-  shatterTrigger,
+function WordParticleBurst({
+  shatterElapsed,
   words,
   letterData,
 }: {
-  shatterTrigger: number;
+  shatterElapsed: number;
   words: string[];
   letterData: LetterData[];
 }) {
   const pointsRef = useRef<THREE.Points>(null);
   const particlesRef = useRef<ParticleData[]>([]);
-  const startTimeRef = useRef(0);
-  const WORD_DELAY = 0.35; // seconds between each word fracturing
-
-  const MAX_PARTICLES = 2000;
+  const spawnedRef = useRef<Set<number>>(new Set());
+  const MAX_PARTICLES = 2500;
 
   const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry();
@@ -191,119 +218,110 @@ function WordParticleShatter({
   }, []);
 
   useEffect(() => {
-    if (shatterTrigger === 0) return;
+    if (shatterElapsed <= 0) {
+      particlesRef.current = [];
+      spawnedRef.current = new Set();
+    }
+  }, [shatterElapsed <= 0]);
 
-    startTimeRef.current = performance.now() / 1000;
-    const allParticles: ParticleData[] = [];
+  useFrame(() => {
+    if (shatterElapsed < 0) {
+      if (particlesRef.current.length > 0) {
+        particlesRef.current = [];
+        const pos = geometry.getAttribute("position") as THREE.BufferAttribute;
+        const col = geometry.getAttribute("color") as THREE.BufferAttribute;
+        for (let i = 0; i < MAX_PARTICLES; i++) {
+          pos.setXYZ(i, 0, -200, 0);
+          col.setXYZ(i, 0, 0, 0);
+        }
+        pos.needsUpdate = true;
+        col.needsUpdate = true;
+        geometry.setDrawRange(0, 0);
+      }
+      return;
+    }
 
-    // Group letters by word
+    // Spawn particles per word when its delay hits
     let letterIdx = 0;
     words.forEach((word, wordIdx) => {
-      const wordLetters = letterData.slice(
-        letterIdx,
-        letterIdx + word.length
-      );
+      const wordDelay = wordIdx * WORD_STAGGER;
+      const wordLetters = letterData.slice(letterIdx, letterIdx + word.length);
       letterIdx += word.length;
 
-      // Center of this word
-      const wordCenterX =
-        wordLetters.length > 0
-          ? (wordLetters[0].position[0] +
-              wordLetters[wordLetters.length - 1].position[0]) /
-            2
-          : 0;
-      const wordCenterY =
-        wordLetters.length > 0 ? wordLetters[0].position[1] : 0;
+      if (shatterElapsed >= wordDelay && !spawnedRef.current.has(wordIdx)) {
+        spawnedRef.current.add(wordIdx);
 
-      // ~120 particles per word
-      const particlesPerWord = Math.min(150, Math.max(60, word.length * 15));
+        let cx = 0, cy = 0;
+        if (wordLetters.length > 0) {
+          cx = wordLetters.reduce((s, l) => s + l.position[0], 0) / wordLetters.length;
+          cy = wordLetters[0].position[1];
+        }
 
-      for (let i = 0; i < particlesPerWord; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const upAngle = Math.random() * Math.PI * 0.4;
-        const speed = 3 + Math.random() * 9;
-        const lifeBase = 160 + Math.random() * 120;
+        const count = Math.min(200, Math.max(80, word.length * 20));
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const upAngle = Math.random() * Math.PI * 0.5;
+          const speed = 4 + Math.random() * 10;
 
-        allParticles.push({
-          position: new THREE.Vector3(
-            wordCenterX + (Math.random() - 0.5) * word.length * 0.4,
-            wordCenterY + (Math.random() - 0.5) * 0.4,
-            (Math.random() - 0.5) * 0.3
-          ),
-          velocity: new THREE.Vector3(
-            Math.cos(angle) * Math.cos(upAngle) * speed,
-            Math.sin(upAngle) * speed + 1.5,
-            Math.sin(angle) * Math.cos(upAngle) * speed * 0.2
-          ),
-          life: lifeBase,
-          maxLife: lifeBase,
-          size: 0.02 + Math.random() * 0.06,
-          // Start crimson, shift to teal/cyan as they age
-          color: new THREE.Color("#FF2A55"),
-        });
+          particlesRef.current.push({
+            position: new THREE.Vector3(
+              cx + (Math.random() - 0.5) * word.length * 0.35,
+              cy + (Math.random() - 0.5) * 0.4,
+              (Math.random() - 0.5) * 0.4
+            ),
+            velocity: new THREE.Vector3(
+              Math.cos(angle) * Math.cos(upAngle) * speed,
+              Math.sin(upAngle) * speed + 2,
+              Math.sin(angle) * Math.cos(upAngle) * speed * 0.3
+            ),
+            life: 200 + Math.random() * 120,
+            maxLife: 320,
+            size: 0.03 + Math.random() * 0.07,
+            color: new THREE.Color("#FF2A55"),
+          });
+        }
       }
     });
 
-    particlesRef.current = allParticles;
-  }, [shatterTrigger, words, letterData]);
-
-  useFrame(() => {
-    if (particlesRef.current.length === 0) return;
-    const now = performance.now() / 1000;
-    const elapsed = now - startTimeRef.current;
-
+    // Update particles
     const pos = geometry.getAttribute("position") as THREE.BufferAttribute;
     const col = geometry.getAttribute("color") as THREE.BufferAttribute;
     let alive = 0;
 
-    particlesRef.current.forEach((p) => {
-      if (p.life <= 0) return;
+    for (const p of particlesRef.current) {
+      if (p.life <= 0) continue;
 
       p.position.x += p.velocity.x * 0.016;
       p.position.y += p.velocity.y * 0.016;
       p.position.z += p.velocity.z * 0.016;
-
-      // Upward thermal buoyancy
-      p.velocity.y += 0.008;
-      // Drag
-      p.velocity.multiplyScalar(0.972);
-
+      p.velocity.y += 0.012;
+      p.velocity.multiplyScalar(0.97);
       p.life--;
 
       const t = 1 - p.life / p.maxLife;
 
-      // Color transition: crimson → cyan/teal → gold/prismatic
-      if (t < 0.2) {
-        p.color.lerpColors(
-          new THREE.Color("#FF2A55"),
-          new THREE.Color("#FF6B8A"),
-          t / 0.2
-        );
-      } else if (t < 0.5) {
-        p.color.lerpColors(
-          new THREE.Color("#FF6B8A"),
-          new THREE.Color("#00F5D4"),
-          (t - 0.2) / 0.3
-        );
+      if (t < 0.15) {
+        p.color.lerpColors(new THREE.Color("#FF2A55"), new THREE.Color("#FF6B8A"), t / 0.15);
+      } else if (t < 0.4) {
+        p.color.lerpColors(new THREE.Color("#FF6B8A"), new THREE.Color("#00F5D4"), (t - 0.15) / 0.25);
+      } else if (t < 0.7) {
+        p.color.lerpColors(new THREE.Color("#00F5D4"), new THREE.Color("#38BDF8"), (t - 0.4) / 0.3);
       } else {
-        p.color.lerpColors(
-          new THREE.Color("#00F5D4"),
-          new THREE.Color("#FFD166"),
-          (t - 0.5) / 0.5
-        );
+        p.color.lerpColors(new THREE.Color("#38BDF8"), new THREE.Color("#FFD166"), (t - 0.7) / 0.3);
       }
 
-      // Fade out in last 20%
-      const alpha = t > 0.8 ? 1 - (t - 0.8) / 0.2 : 1;
+      const alpha = t > 0.75 ? 1 - (t - 0.75) / 0.25 : 1;
 
       pos.setXYZ(alive, p.position.x, p.position.y, p.position.z);
       col.setXYZ(alive, p.color.r * alpha, p.color.g * alpha, p.color.b * alpha);
       alive++;
-    });
+    }
 
     for (let i = alive; i < MAX_PARTICLES; i++) {
-      pos.setXYZ(i, 0, -100, 0);
+      pos.setXYZ(i, 0, -200, 0);
+      col.setXYZ(i, 0, 0, 0);
     }
+
     pos.needsUpdate = true;
     col.needsUpdate = true;
     geometry.setDrawRange(0, alive);
@@ -313,10 +331,10 @@ function WordParticleShatter({
     <points ref={pointsRef} geometry={geometry}>
       <pointsMaterial
         vertexColors
-        size={0.08}
+        size={0.1}
         sizeAttenuation
         transparent
-        opacity={0.95}
+        opacity={1}
         blending={THREE.AdditiveBlending}
         depthWrite={false}
       />
@@ -348,10 +366,7 @@ function AmbientParticles() {
       colors[i * 3 + 1] = c.g;
       colors[i * 3 + 2] = c.b;
     }
-    geo.setAttribute(
-      "position",
-      new THREE.BufferAttribute(positions, 3)
-    );
+    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     return geo;
   }, []);
@@ -359,18 +374,10 @@ function AmbientParticles() {
   useFrame(({ clock }) => {
     if (!ref.current) return;
     const t = clock.getElapsedTime();
-    const positions = ref.current.geometry.getAttribute(
-      "position"
-    ) as THREE.BufferAttribute;
+    const positions = ref.current.geometry.getAttribute("position") as THREE.BufferAttribute;
     for (let i = 0; i < positions.count; i++) {
-      positions.setY(
-        i,
-        positions.getY(i) + Math.sin(t * 0.5 + i * 0.1) * 0.001
-      );
-      positions.setX(
-        i,
-        positions.getX(i) + Math.cos(t * 0.3 + i * 0.05) * 0.0005
-      );
+      positions.setY(i, positions.getY(i) + Math.sin(t * 0.5 + i * 0.1) * 0.001);
+      positions.setX(i, positions.getX(i) + Math.cos(t * 0.3 + i * 0.05) * 0.0005);
     }
     positions.needsUpdate = true;
   });
@@ -393,15 +400,14 @@ function AmbientParticles() {
 // ── Compute letter positions ──────────────────
 
 function computeLetterPositions(text: string): LetterData[] {
-  const maxCharsPerLine = 24;
-  const letterWidth = 0.42;
-  const spaceWidth = 0.22;
-  const lineSpacing = 0.7;
+  const maxCharsPerLine = 28; // more chars per line for readability
+  const letterWidth = 0.36; // tighter
+  const spaceWidth = 0.2;
+  const lineSpacing = 0.6;
   const letters: LetterData[] = [];
 
-  const displayText =
-    text.length > 120 ? text.slice(0, 117) + "..." : text;
-  const words = displayText.split(/(\s+)/); // preserve spaces
+  const displayText = text.length > 140 ? text.slice(0, 137) + "..." : text;
+  const words = displayText.split(/(\s+)/);
 
   let cursorX = 0;
   let cursorY = 0;
@@ -414,7 +420,6 @@ function computeLetterPositions(text: string): LetterData[] {
       const isSpace = ch === " " || ch === "\n";
 
       if (ch === "\n" || (!isSpace && lineCharCount >= maxCharsPerLine)) {
-        // New line
         cursorY -= lineSpacing;
         cursorX = 0;
         lineCharCount = 0;
@@ -424,10 +429,10 @@ function computeLetterPositions(text: string): LetterData[] {
 
       letters.push({
         char: ch,
-        wordIndex: 0, // will be set below
+        wordIndex: 0,
         position: [cursorX, cursorY, 0],
         width: w,
-        seed: charCount * 0.618 + Math.sin(charCount * 1.7) * 0.5, // golden-ratio-based unique seed
+        seed: charCount * 0.618 + Math.sin(charCount * 1.7) * 0.5,
       });
 
       cursorX += w;
@@ -450,7 +455,7 @@ function computeLetterPositions(text: string): LetterData[] {
     }
   }
 
-  // Assign word indices — track which word each non-space letter belongs to
+  // Assign word indices
   let wordIdx = 0;
   let inWord = false;
   for (const l of letters) {
@@ -481,16 +486,18 @@ function Scene({
   shatterTrigger: number;
   showText: boolean;
 }) {
+  const shatterStartRef = useRef<number>(-1);
+  const prevTriggerRef = useRef<number>(0);
+  const [shatterElapsed, setShatterElapsed] = useState(-1);
+
   const letterData = useMemo(
     () => (showText && thought ? computeLetterPositions(thought) : []),
     [thought, showText]
   );
 
-  // Get unique words with their indices
   const words = useMemo(() => {
     if (!thought) return [];
-    const displayText =
-      thought.length > 120 ? thought.slice(0, 117) + "..." : thought;
+    const displayText = thought.length > 140 ? thought.slice(0, 137) + "..." : thought;
     const uniqueWords: string[] = [];
     let lastWord = "";
     for (const ch of displayText) {
@@ -507,26 +514,25 @@ function Scene({
     return uniqueWords;
   }, [thought]);
 
-  // Track shatter start time per word
-  const wordShatterTimes = useMemo(() => {
-    if (shatterTrigger === 0) return {};
-    const times: Record<number, number> = {};
-    words.forEach((_, i) => {
-      times[i + 1] = i * 0.35; // 350ms stagger between words
-    });
-    return times;
-  }, [shatterTrigger, words]);
+  useEffect(() => {
+    if (shatterTrigger > prevTriggerRef.current) {
+      shatterStartRef.current = performance.now() / 1000;
+      prevTriggerRef.current = shatterTrigger;
+    }
+  }, [shatterTrigger]);
 
-  // Compute per-letter shatter delay
-  const letterShatterData = useMemo(() => {
-    return letterData.map((l) => ({
-      ...l,
-      wordShatterDelay:
-        shatterTrigger > 0 && l.wordIndex > 0
-          ? (wordShatterTimes[l.wordIndex] || 0)
-          : 0,
-    }));
-  }, [letterData, shatterTrigger, wordShatterTimes]);
+  useFrame(() => {
+    if (shatterStartRef.current < 0) {
+      if (shatterElapsed !== -1) setShatterElapsed(-1);
+      return;
+    }
+    const now = performance.now() / 1000;
+    setShatterElapsed(now - shatterStartRef.current);
+  });
+
+  const wordDelays = useMemo(() => {
+    return words.map((_, i) => i * WORD_STAGGER);
+  }, [words]);
 
   return (
     <>
@@ -539,8 +545,7 @@ function Scene({
 
       <AmbientParticles />
 
-      {/* Individual jagged letters */}
-      {letterShatterData.map((l, i) => (
+      {letterData.map((l, i) => (
         <JaggedLetter
           key={`${l.char}-${i}-${thought}`}
           char={l.char}
@@ -548,15 +553,14 @@ function Scene({
           seed={l.seed}
           tension={tension}
           visible={showText}
-          shatterTime={shatterTrigger > 0 ? performance.now() / 1000 : 0}
-          wordShatterDelay={l.wordShatterDelay}
+          shatterElapsed={shatterElapsed}
+          wordDelay={wordDelays[l.wordIndex - 1] ?? 0}
         />
       ))}
 
-      {/* Word-by-word particle shatter */}
       {shatterTrigger > 0 && (
-        <WordParticleShatter
-          shatterTrigger={shatterTrigger}
+        <WordParticleBurst
+          shatterElapsed={shatterElapsed}
           words={words}
           letterData={letterData}
         />

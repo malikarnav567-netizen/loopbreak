@@ -156,10 +156,14 @@ export default function Home() {
 
   // ── Submit reframe ───────────────────────────
   const handleReframe = async () => {
-    if (!reframe.trim()) return;
+    if (!reframe.trim() || reframeLoading) return;
     setReframeLoading(true);
     setReframeError("");
     setReframeResult(null);
+
+    // 30-second timeout for Gemini API
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
 
     try {
       const response = await fetch("/api/reframeThought", {
@@ -171,7 +175,9 @@ export default function Home() {
           socraticQuestion:
             result.socraticQuestion || result.socratic_question,
         }),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Evaluation failed");
       setReframeResult(data);
@@ -181,18 +187,20 @@ export default function Home() {
         // SHATTER MOMENT — word-by-word sequential fracture
         stopTensionHum();
         setShatterTrigger((n) => n + 1);
-        // Don't hide text yet — let letters fly apart one word at a time
+        // Letters fly apart: 0.6s stagger × word count + 3s per word duration + buffer
         const wordCount = thought.split(/\s+/).filter(Boolean).length;
-        const fractureDuration = wordCount * 350 + 1500;
+        const fractureDuration = Math.min(wordCount * 600 + 3000, 12000);
         setTimeout(() => setShowCanvasText(false), fractureDuration);
         playDissolutionChime();
-        setTimeout(
-          () => setAppState("dissolution"),
-          fractureDuration + 800
-        );
+        setTimeout(() => setAppState("dissolution"), fractureDuration + 1000);
       }
     } catch (err: any) {
-      setReframeError(err.message);
+      clearTimeout(timeout);
+      if (err.name === "AbortError") {
+        setReframeError("API timed out — Gemini is under high load. Please try again.");
+      } else {
+        setReframeError(err.message);
+      }
     } finally {
       setReframeLoading(false);
     }
