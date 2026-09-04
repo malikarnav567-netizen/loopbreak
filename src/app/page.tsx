@@ -187,12 +187,12 @@ export default function Home() {
         // SHATTER MOMENT — word-by-word sequential fracture
         stopTensionHum();
         setShatterTrigger((n) => n + 1);
-        // Letters fly apart: 0.6s stagger × word count + 3s per word duration + buffer
+        // Slower fracture: 0.8s stagger × word count + 4s per word duration + buffer
         const wordCount = thought.split(/\s+/).filter(Boolean).length;
-        const fractureDuration = Math.min(wordCount * 600 + 3000, 12000);
+        const fractureDuration = Math.min(wordCount * 800 + 4000, 16000);
         setTimeout(() => setShowCanvasText(false), fractureDuration);
         playDissolutionChime();
-        setTimeout(() => setAppState("dissolution"), fractureDuration + 1000);
+        setTimeout(() => setAppState("dissolution"), fractureDuration + 6000);
       }
     } catch (err: any) {
       clearTimeout(timeout);
@@ -572,8 +572,8 @@ export default function Home() {
                     key="dissolution-overlay"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 1.2 }}
-                    className="absolute inset-0 z-30 flex items-center justify-center"
+                    transition={{ duration: 2.0 }}
+                    className="absolute inset-0 z-10 flex items-center justify-center pointer-events-auto"
                   >
                     <motion.div
                       initial={{ opacity: 0, scale: 0.8 }}
