@@ -692,10 +692,10 @@ function AmbientParticles() {
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const palette = [
-      new THREE.Color("#14B8A6"),
-      new THREE.Color("#38BDF8"),
-      new THREE.Color("#10B981"),
-      new THREE.Color("#00F5D4"),
+      new THREE.Color("#FFDE4D"),
+      new THREE.Color("#FF6B6B"),
+      new THREE.Color("#00FF66"),
+      new THREE.Color("#FFFFFF"),
     ];
     for (let i = 0; i < count; i++) {
       positions[i * 3] = (Math.random() - 0.5) * 18;
@@ -888,12 +888,12 @@ function Scene({
 
   return (
     <>
-      <ambientLight intensity={0.3} />
-      <pointLight position={[5, 5, 5]} intensity={0.8} color="#14B8A6" />
-      <pointLight position={[-5, 3, 3]} intensity={0.5} color="#F43F5E" />
-      <pointLight position={[0, -3, 2]} intensity={0.3} color="#38BDF8" />
-      <color attach="background" args={["#07090E"]} />
-      <fog attach="fog" args={["#07090E", 12, 28]} />
+      <ambientLight intensity={0.4} />
+      <pointLight position={[5, 5, 5]} intensity={0.8} color="#FFDE4D" />
+      <pointLight position={[-5, 3, 3]} intensity={0.5} color="#FF6B6B" />
+      <pointLight position={[0, -3, 2]} intensity={0.3} color="#00FF66" />
+      <color attach="background" args={["#0A0A0A"]} />
+      <fog attach="fog" args={["#0A0A0A", 14, 30]} />
 
       <AmbientParticles />
 
@@ -954,7 +954,7 @@ export default function ThoughtScene({
           alpha: false,
           powerPreference: "high-performance",
         }}
-        style={{ background: "#07090E" }}
+        style={{ background: "#0A0A0A" }}
       >
         <Scene
           thought={thought}
