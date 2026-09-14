@@ -9,7 +9,7 @@
 
 "use client";
 
-import { useCallback, useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import {
   ReactFlow,
   Background,
@@ -78,21 +78,24 @@ const NODE_STYLES: Record<string, { bg: string; border: string; icon: string; la
 // ── Custom Node Component ────────────────────
 
 function CognitiveNodeComponent({ data, selected }: NodeProps) {
+  const [hovered, setHovered] = useState(false);
   const nodeData = data as unknown as {
     type: string;
     label: string;
     fullText?: string;
     confidence?: number;
     isLoop?: boolean;
-    onClick?: (id: string) => void;
     onDelete?: (id: string) => void;
   };
 
   const style = NODE_STYLES[nodeData.type] || NODE_STYLES.claim;
+  const displayText = nodeData.fullText || nodeData.label;
+  const isLong = displayText.length > 30;
 
   return (
     <div
-      onClick={() => nodeData.onClick?.(data.id as string)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className={`group relative cursor-pointer transition-all duration-100 ${
         selected ? "ring-4 ring-[var(--color-teal)] ring-offset-2 ring-offset-[var(--color-bg)]" : ""
       } ${nodeData.isLoop ? "ring-4 ring-[var(--color-coral)] ring-offset-2 ring-offset-[var(--color-bg)]" : ""}`}
@@ -100,8 +103,8 @@ function CognitiveNodeComponent({ data, selected }: NodeProps) {
         background: style.bg,
         border: `4px solid ${style.border}`,
         boxShadow: selected ? `6px 6px 0px 0px ${style.border}` : `4px 4px 0px 0px #000000`,
-        minWidth: 140,
-        maxWidth: 200,
+        minWidth: 160,
+        maxWidth: 240,
         borderRadius: 0,
       }}
     >
@@ -120,8 +123,8 @@ function CognitiveNodeComponent({ data, selected }: NodeProps) {
         <span className="text-sm flex-shrink-0">{style.icon}</span>
         <div className="min-w-0 flex-1">
           <p
-            className="text-xs font-bold text-black truncate uppercase tracking-wider leading-tight"
-            style={{ fontFamily: "var(--font-display)" }}
+            className="text-xs font-bold text-black uppercase tracking-wider leading-tight"
+            style={{ fontFamily: "var(--font-display)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
           >
             {nodeData.label}
           </p>
@@ -152,6 +155,35 @@ function CognitiveNodeComponent({ data, selected }: NodeProps) {
           </button>
         )}
       </div>
+
+      {/* Hover Tooltip — shows full text, type, confidence */}        {hovered && (
+        <div
+          className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full z-50 w-80 p-3 pointer-events-none"
+          style={{
+            background: style.bg,
+            border: `3px solid #000000`,
+            boxShadow: `4px 4px 0px 0px #000000`,
+            borderRadius: 0,
+          }}
+        >
+          <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ fontFamily: "var(--font-mono)", color: style.border === '#000000' ? '#000' : style.border }}>
+            {style.label} Node
+          </p>
+          <p className="text-[11px] text-black leading-relaxed" style={{ fontFamily: "var(--font-display)" }}>
+            &ldquo;{displayText}&rdquo;
+          </p>
+          {nodeData.confidence !== undefined && (
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <div className="h-1.5 flex-1 bg-gray-200 overflow-hidden">
+                <div className="h-full bg-black" style={{ width: `${(nodeData.confidence || 0) * 100}%` }} />
+              </div>
+              <span className="text-[9px] font-bold" style={{ fontFamily: "var(--font-mono)", color: '#666' }}>
+                {Math.round((nodeData.confidence || 0) * 100)}%
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {nodeData.isLoop && (
         <div className="absolute -top-3 -right-3 bg-[var(--color-coral)] border-3 border-black p-1">
@@ -344,7 +376,7 @@ export default function CognitiveGraphView({ graph, onNodeDelete }: CognitiveGra
             const found = graph.nodes.find((gn) => gn.id === id);
             if (found) setSelectedNode({ ...found, isLoop: cycles.has(id) });
           },
-          onDelete: onNodeDelete,
+          onDelete: (id: string) => deleteRef.current?.(id),
         },
         type: "cognitiveNode",
       };
@@ -397,6 +429,10 @@ export default function CognitiveGraphView({ graph, onNodeDelete }: CognitiveGra
     onNodeDelete?.(nodeId);
   }, [setNodes, setEdges, onNodeDelete]);
 
+  // Ref so initialNodes memo can access the delete handler without re-creating
+  const deleteRef = useRef<((id: string) => void) | null>(null);
+  deleteRef.current = handleDeleteNode;
+
   if (!graph || initialNodes.length === 0) return null;
 
   return (
@@ -423,7 +459,7 @@ export default function CognitiveGraphView({ graph, onNodeDelete }: CognitiveGra
       </div>
 
       {/* Graph container — spacious neubrutalist card */}
-      <div className="border-4 border-black bg-white overflow-hidden" style={{ height: 560, boxShadow: "6px 6px 0px 0px #000000" }}>
+      <div className="border-4 border-black bg-white" style={{ height: 560, boxShadow: "6px 6px 0px 0px #000000", overflow: "visible" }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}

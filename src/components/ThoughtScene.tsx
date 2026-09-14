@@ -30,36 +30,30 @@ const SHATTER_DURATION = 4.0; // seconds for letters to fly apart
 const CRACK_MAX_LINES = 40;
 
 // ── Font loader hook ───────────────────────────
-
-let fontLoaded = false;
-let fontPromise: Promise<void> | null = null;
+// fontLoaded is a React state so canvas textures re-render when font loads
+const _fontLoadedState = { current: false };
+let _fontResolve: ((v: boolean) => void) | null = null;
 
 function useNeubrutalistFont(): boolean {
-  const [loaded, setLoaded] = useState(fontLoaded);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (fontLoaded) {
+    (async () => {
+      try {
+        const font = new FontFace(
+          "Space Grotesk",
+          "url(/SpaceGrotesk-Bold.ttf)",
+          { weight: "700" }
+        );
+        await font.load();
+        document.fonts.add(font);
+        _fontLoadedState.current = true;
+      } catch (e) {
+        console.warn("Space Grotesk font failed to load, using system fallback", e);
+        _fontLoadedState.current = true;
+      }
       setLoaded(true);
-      return;
-    }
-    if (!fontPromise) {
-      fontPromise = (async () => {
-        try {
-          const font = new FontFace(
-            "SpaceGrotesk",
-            "url(https://fonts.gstatic.com/s/spacegrotesk/v16/V8mDoQDjQSkFtoMM3T6r8E7mPb54C_k3HqUtELg.woff2)",
-            { weight: "700" }
-          );
-          await font.load();
-          document.fonts.add(font);
-          fontLoaded = true;
-        } catch (e) {
-          console.warn("Space Grotesk font failed to load, falling back", e);
-          fontLoaded = true; // proceed with fallback
-        }
-      })();
-    }
-    fontPromise.then(() => setLoaded(true));
+    })();
   }, []);
 
   return loaded;
@@ -220,6 +214,7 @@ function JaggedLetter({
   visible,
   shatterElapsed,
   wordDelay,
+  fontReady,
 }: {
   char: string;
   position: [number, number, number];
@@ -228,6 +223,7 @@ function JaggedLetter({
   visible: boolean;
   shatterElapsed: number;
   wordDelay: number;
+  fontReady: boolean;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const matRef = useRef<THREE.MeshBasicMaterial>(null);
@@ -264,9 +260,9 @@ function JaggedLetter({
     const fontSize = char === " " ? 10 : 58;
 
     // Use Space Grotesk if loaded, fallback to sans-serif
-    const fontFamily = fontLoaded
-      ? '"SpaceGrotesk", "Space Grotesk", "SF Mono", system-ui, sans-serif'
-      : '"Space Grotesk", system-ui, sans-serif';
+    const fontFamily = _fontLoadedState.current
+      ? '"Space Grotesk", system-ui, sans-serif'
+      : 'system-ui, sans-serif';
 
     ctx.font = `700 ${fontSize}px ${fontFamily}`;
     ctx.textAlign = "center";
@@ -307,7 +303,7 @@ function JaggedLetter({
     setTexture(tex);
 
     return () => tex.dispose();
-  }, [char, visible, tension > 0.5, isShattering, Math.floor(shatterProgress * 4), fontLoaded]);
+  }, [char, visible, tension > 0.5, isShattering, Math.floor(shatterProgress * 4), fontReady]);
 
   // Per-frame animation
   useFrame(({ clock }) => {
@@ -831,11 +827,13 @@ function Scene({
   tension,
   shatterTrigger,
   showText,
+  fontReady,
 }: {
   thought: string;
   tension: number;
   shatterTrigger: number;
   showText: boolean;
+  fontReady: boolean;
 }) {
   const shatterStartRef = useRef<number>(-1);
   const prevTriggerRef = useRef<number>(0);
@@ -915,6 +913,7 @@ function Scene({
           visible={showText}
           shatterElapsed={shatterElapsed}
           wordDelay={wordDelays[l.wordIndex - 1] ?? 0}
+          fontReady={fontReady}
         />
       ))}
 
@@ -943,7 +942,7 @@ export default function ThoughtScene({
   showText?: boolean;
 }) {
   // Preload Space Grotesk font for 3D canvas
-  useNeubrutalistFont();
+  const fontReady = useNeubrutalistFont();
 
   return (
     <div style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}>        <Canvas
@@ -961,6 +960,7 @@ export default function ThoughtScene({
           tension={tension}
           shatterTrigger={shatterTrigger}
           showText={showText}
+          fontReady={fontReady}
         />
       </Canvas>
     </div>

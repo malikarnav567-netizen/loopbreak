@@ -103,8 +103,12 @@ export default function Home() {
   const [cognitiveGraph, setCognitiveGraph] = useState<CognitiveGraph | null>(null);
   const [showGraph, setShowGraph] = useState(true);
   const [graphCollapsed, setGraphCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const prevMilestones = useRef<Set<number>>(new Set());
+
+  // ── Mount detection for animation safety ────
+  useEffect(() => { setMounted(true); }, []);
 
   // Whether the 3D canvas should be visible
   const canvasVisible = appState === "distortion" || appState === "dissolution" || appState === "shattering";
@@ -346,7 +350,7 @@ export default function Home() {
           {appState === "ingestion" && (
             <motion.div
               key="ingestion"
-              initial={{ opacity: 0, y: 30 }}
+              initial={mounted ? { opacity: 0, y: 30 } : false}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -30 }}
               transition={{ duration: 0.4 }}
@@ -356,7 +360,7 @@ export default function Home() {
                 {/* Title */}
                 <div className="mb-10">
                   <motion.h1
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={mounted ? { opacity: 0, y: 20 } : false}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                     className="mb-2 text-4xl font-bold tracking-tight text-black uppercase md:text-5xl"
@@ -365,7 +369,7 @@ export default function Home() {
                     What&apos;s on your mind?
                   </motion.h1>
                   <motion.p
-                    initial={{ opacity: 0 }}
+                    initial={mounted ? { opacity: 0 } : false}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2 }}
                     className="text-[var(--color-text-muted)] text-sm"
