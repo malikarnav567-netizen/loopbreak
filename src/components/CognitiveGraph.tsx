@@ -50,7 +50,7 @@ const NODE_STYLES: Record<string, { bg: string; border: string; icon: string; la
     label: "Claim",
   },
   distortion: {
-    bg: "#FF6B6B",
+    bg: "#8B4049",
     border: "#000000",
     icon: "🔴",
     label: "Distortion",
@@ -63,12 +63,12 @@ const NODE_STYLES: Record<string, { bg: string; border: string; icon: string; la
   },
   evidence: {
     bg: "#FFFFFF",
-    border: "#14B8A6",
+    border: "#2C3E6B",
     icon: "📋",
     label: "Evidence",
   },
   counter: {
-    bg: "#00FF66",
+    bg: "#3B5998",
     border: "#000000",
     icon: "✨",
     label: "Counter",
@@ -100,8 +100,8 @@ function CognitiveNodeComponent({ data, selected }: NodeProps) {
         background: style.bg,
         border: `4px solid ${style.border}`,
         boxShadow: selected ? `6px 6px 0px 0px ${style.border}` : `4px 4px 0px 0px #000000`,
-        minWidth: 150,
-        maxWidth: 240,
+        minWidth: 140,
+        maxWidth: 200,
         borderRadius: 0,
       }}
     >
@@ -165,10 +165,10 @@ function CognitiveNodeComponent({ data, selected }: NodeProps) {
 // ── Edge Styling ──────────────────────────────
 
 const EDGE_COLORS: Record<string, string> = {
-  supports: "#00FF66",
-  leads_to: "#FF6B6B",
+  supports: "#3B5998",
+  leads_to: "#8B4049",
   amplifies: "#FFDE4D",
-  contradicts: "#14B8A6",
+  contradicts: "#2C3E6B",
 };
 
 // ── Cycle Detection ──────────────────────────
@@ -320,9 +320,9 @@ export default function CognitiveGraphView({ graph, onNodeDelete }: CognitiveGra
     setLoopNodes(cycles);
 
     const count = graph.nodes.length;
-    const centerX = 350;
-    const centerY = 240;
-    const radius = Math.min(220, 80 + count * 20);
+    const centerX = 420;
+    const centerY = 280;
+    const radius = Math.min(280, 120 + count * 28);
 
     return graph.nodes.map((n, i) => {
       const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
@@ -423,7 +423,7 @@ export default function CognitiveGraphView({ graph, onNodeDelete }: CognitiveGra
       </div>
 
       {/* Graph container — spacious neubrutalist card */}
-      <div className="border-4 border-black bg-white overflow-hidden" style={{ height: 480, boxShadow: "6px 6px 0px 0px #000000" }}>
+      <div className="border-4 border-black bg-white overflow-hidden" style={{ height: 560, boxShadow: "6px 6px 0px 0px #000000" }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -431,7 +431,7 @@ export default function CognitiveGraphView({ graph, onNodeDelete }: CognitiveGra
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
           fitView
-          fitViewOptions={{ padding: 0.4 }}
+          fitViewOptions={{ padding: 0.5 }}
           proOptions={{ hideAttribution: true }}
           defaultEdgeOptions={{
             type: "smoothstep",
@@ -459,7 +459,7 @@ export default function CognitiveGraphView({ graph, onNodeDelete }: CognitiveGra
         </ReactFlow>
       </div>
 
-      {/* Legend — bold tags */}
+      {/* Legend */}
       <div className="mt-3 flex flex-wrap gap-2">
         {Object.entries(NODE_STYLES).map(([type, s]) => (
           <div key={type} className="flex items-center gap-1.5 bg-white border-2 border-black px-2 py-0.5">
@@ -469,6 +469,42 @@ export default function CognitiveGraphView({ graph, onNodeDelete }: CognitiveGra
             </span>
           </div>
         ))}
+      </div>
+
+      {/* How to Use — 4-step guide */}
+      <div className="mt-4 border-4 border-black bg-white p-5" style={{ boxShadow: "4px 4px 0px 0px #000000" }}>
+        <p
+          className="text-[10px] uppercase tracking-widest text-black font-bold mb-3"
+          style={{ fontFamily: "var(--font-mono)" }}
+        >
+          How to Read This Map
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex items-start gap-2">
+            <span className="text-[var(--color-yellow)] font-bold text-sm" style={{ fontFamily: "var(--font-mono)" }}>01</span>
+            <p className="text-xs text-black leading-relaxed">
+              <strong>Hover</strong> any node to see its full thought, type, and confidence level.
+            </p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="text-[var(--color-coral)] font-bold text-sm" style={{ fontFamily: "var(--font-mono)" }}>02</span>
+            <p className="text-xs text-black leading-relaxed">
+              <strong>Red nodes</strong> are cognitive distortions — irrational patterns your mind uses.
+            </p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="text-[var(--color-coral)] font-bold text-sm" style={{ fontFamily: "var(--font-mono)" }}>03</span>
+            <p className="text-xs text-black leading-relaxed">
+              <strong>Loops</strong> (⚡ icon) are rumination cycles — the same thought feeding itself.
+            </p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="text-[#3B5998] font-bold text-sm" style={{ fontFamily: "var(--font-mono)" }}>04</span>
+            <p className="text-xs text-black leading-relaxed">
+              <strong>Delete</strong> any distortion node to break the loop and reframe the thought.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Detail Panel */}

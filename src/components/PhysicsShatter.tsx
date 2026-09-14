@@ -65,13 +65,13 @@ interface PhysicsShatterProps {
 // ── Pop-Art Color Palettes ──────────────────
 
 const POP_COLORS = {
-  shardText: ["#FFFFFF", "#FFDE4D", "#FF6B6B", "#00FF66"],
-  shardBg: ["#000000", "#FF6B6B", "#FFDE4D", "#14B8A6", "#F59E0B"],
-  starburst: ["#FFDE4D", "#FF6B6B", "#00FF66", "#FFFFFF", "#14B8A6"],
-  neonRing: ["#FF6B6B", "#FFDE4D", "#00FF66", "#14B8A6"],
+  shardText: ["#FFFFFF", "#FFDE4D", "#8B4049", "#3B5998"],
+  shardBg: ["#000000", "#8B4049", "#FFDE4D", "#2C3E6B", "#F59E0B"],
+  starburst: ["#FFDE4D", "#8B4049", "#3B5998", "#FFFFFF", "#2C3E6B"],
+  neonRing: ["#8B4049", "#FFDE4D", "#3B5998", "#2C3E6B"],
 };
 
-const COUNTER_COLOR = "#14B8A6";
+const COUNTER_COLOR = "#2C3E6B";
 
 // ── Screen Shake Hook ──────────────────────
 

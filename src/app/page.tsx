@@ -60,16 +60,16 @@ const CRACK_MILESTONES = new Set([0.25, 0.5, 0.75]);
 
 // ── Distortion badge colors ────────────────────
 const DISTORTION_COLORS: Record<string, string> = {
-  Catastrophizing: "#FF6B6B",
+  Catastrophizing: "#8B4049",
   "Mind Reading": "#FFDE4D",
-  "All-or-Nothing Thinking": "#FF6B6B",
+  "All-or-Nothing Thinking": "#8B4049",
   Overgeneralization: "#FFDE4D",
   "Emotional Reasoning": "#F59E0B",
   Labeling: "#FFDE4D",
-  "Should Statements": "#FF6B6B",
+  "Should Statements": "#8B4049",
   Personalization: "#F59E0B",
   "Mental Filter": "#FFDE4D",
-  "Jumping to Conclusions": "#FF6B6B",
+  "Jumping to Conclusions": "#8B4049",
 };
 
 export default function Home() {
@@ -526,7 +526,7 @@ export default function Home() {
                     ? streaming.state.distortions.map((d) => d.type)
                     : result?.distortions || []
                   ).map((d: string, i: number) => {
-                    const c = DISTORTION_COLORS[d] || "#FF6B6B";
+                    const c = DISTORTION_COLORS[d] || "#8B4049";
                     return (
                       <motion.span
                         key={`${d}-${i}`}
@@ -546,19 +546,22 @@ export default function Home() {
                   })}
                 </div>
 
-                {/* Socratic question */}
+                {/* Socratic question — on the 3D canvas */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
                   className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[90%] max-w-xl nb-card p-5"
                 >
-                  <p
-                    className="text-[10px] uppercase tracking-widest text-[var(--color-teal)] mb-1.5 font-bold"
-                    style={{ fontFamily: "var(--font-mono)" }}
-                  >
-                    ⚡ Socratic Challenge
-                  </p>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <AlertTriangle className="h-4 w-4 text-[var(--color-teal)]" strokeWidth={2.5} />
+                    <p
+                      className="text-[10px] uppercase tracking-widest text-[var(--color-teal)] font-bold"
+                      style={{ fontFamily: "var(--font-mono)" }}
+                    >
+                      ⚡ Socratic Challenge
+                    </p>
+                  </div>
                   <p
                     className="text-sm text-black font-semibold leading-relaxed"
                     style={{ fontFamily: "var(--font-display)" }}
@@ -699,14 +702,14 @@ export default function Home() {
             className="relative z-20 border-t-4 border-black bg-[var(--color-bg)]"
           >
             <div className="mx-auto max-w-2xl px-6 py-8">
-              {/* Core Fallacy */}
+              {/* Core Fallacy — shown below the graph in the reframe section */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
                 className="mb-4 nb-card p-4"
               >
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1.5">
                   <AlertTriangle className="h-4 w-4 text-[var(--color-coral)]" strokeWidth={2.5} />
                   <p
                     className="text-[10px] uppercase tracking-widest text-[var(--color-coral)] font-bold"
@@ -715,8 +718,11 @@ export default function Home() {
                     Core Fallacy
                   </p>
                 </div>
-                <p className="text-sm text-black font-medium">
-                  {streaming.state.coreFallacy || result.coreFallacy || result.core_fallacy}
+                <p
+                  className="text-sm text-black font-medium"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  {streaming.state.coreFallacy || result?.coreFallacy || result?.core_fallacy}
                 </p>
               </motion.div>
 

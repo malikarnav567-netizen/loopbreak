@@ -2,8 +2,8 @@
 
 @theme inline {
   /* ── Neubrutalist Palette ───────────────── */
-  --color-bg: #F4F0EA;
-  --color-bg-warm: #EDE8E0;
+  --color-bg: #D0C4B0;
+  --color-bg-warm: #C4B8A4;
   --color-card: #FFFFFF;
   --color-card-hover: #FAFAFA;
 
@@ -11,16 +11,16 @@
   --color-text: #1A1A1A;
   --color-text-muted: #6B6B6B;
 
-  --color-yellow: #FFDE4D;
-  --color-yellow-hover: #FFD630;
-  --color-coral: #FF6B6B;
-  --color-coral-dark: #E55A5A;
-  --color-green: #00FF66;
-  --color-green-dark: #00CC52;
-  --color-neon-green: #00FF66;
-  --color-neon-coral: #FF6B6B;
+  --color-yellow: #D4B040;
+  --color-yellow-hover: #C0A030;
+  --color-coral: #8B4049;
+  --color-coral-dark: #6E3239;
+  --color-green: #3B5998;
+  --color-green-dark: #2C3E6B;
+  --color-neon-green: #4A6FA5;
+  --color-neon-coral: #8B4049;
 
-  --color-teal: #14B8A6;
+  --color-teal: #2C3E6B;
   --color-amber: #F59E0B;
   --color-crimson: #F43F5E;
   --color-emerald: #10B981;
@@ -159,7 +159,7 @@ body {
 }
 
 .btn-teal:hover {
-  background: #0EA5A0;
+  background: #3B5998;
   box-shadow: 8px 8px 0px 0px var(--color-black);
 }
 

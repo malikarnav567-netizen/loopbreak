@@ -27,12 +27,12 @@ interface StreamingProgressProps {
 }
 
 const STAGE_CONFIG: Record<string, { icon: typeof Scan; color: string; bg: string; label: string }> = {
-  detecting_distortions: { icon: Scan, color: "#FFFFFF", bg: "#FF6B6B", label: "Detecting Distortions" },
-  generating_socratic: { icon: MessageCircleQuestion, color: "#000000", bg: "#14B8A6", label: "Crafting Challenge" },
+  detecting_distortions: { icon: Scan, color: "#FFFFFF", bg: "#8B4049", label: "Detecting Distortions" },
+  generating_socratic: { icon: MessageCircleQuestion, color: "#000000", bg: "#2C3E6B", label: "Crafting Challenge" },
   core_fallacy: { icon: AlertTriangle, color: "#000000", bg: "#FFDE4D", label: "Identifying Fallacy" },
-  generating_graph: { icon: Network, color: "#000000", bg: "#00FF66", label: "Building Cognitive Map" },
-  complete: { icon: CheckCircle2, color: "#000000", bg: "#00FF66", label: "Analysis Complete" },
-  error: { icon: AlertTriangle, color: "#FFFFFF", bg: "#FF6B6B", label: "Error" },
+  generating_graph: { icon: Network, color: "#000000", bg: "#3B5998", label: "Building Cognitive Map" },
+  complete: { icon: CheckCircle2, color: "#000000", bg: "#3B5998", label: "Analysis Complete" },
+  error: { icon: AlertTriangle, color: "#FFFFFF", bg: "#8B4049", label: "Error" },
 };
 
 export default function StreamingProgress({

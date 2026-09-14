@@ -34,7 +34,7 @@ const CRACK_MAX_LINES = 40;
 let fontLoaded = false;
 let fontPromise: Promise<void> | null = null;
 
-function useOrbitronFont(): boolean {
+function useNeubrutalistFont(): boolean {
   const [loaded, setLoaded] = useState(fontLoaded);
 
   useEffect(() => {
@@ -46,15 +46,15 @@ function useOrbitronFont(): boolean {
       fontPromise = (async () => {
         try {
           const font = new FontFace(
-            "Orbitron",
-            "url(/Orbitron-Bold.ttf)",
+            "SpaceGrotesk",
+            "url(https://fonts.gstatic.com/s/spacegrotesk/v16/V8mDoQDjQSkFtoMM3T6r8E7mPb54C_k3HqUtELg.woff2)",
             { weight: "700" }
           );
           await font.load();
           document.fonts.add(font);
           fontLoaded = true;
         } catch (e) {
-          console.warn("Orbitron font failed to load, falling back", e);
+          console.warn("Space Grotesk font failed to load, falling back", e);
           fontLoaded = true; // proceed with fallback
         }
       })();
@@ -239,7 +239,7 @@ function JaggedLetter({
     ? Math.min(1, localElapsed / SHATTER_DURATION)
     : 0;
 
-  // ── Orbitron font vibration params ──
+  // ── Neubrutalist font vibration params ──
   const vibFreqX = 2.2 + seed * 0.8;
   const vibFreqY = 2.8 + seed * 0.6;
   const vibFreqRot = 1.5 + seed * 0.5;
@@ -247,7 +247,7 @@ function JaggedLetter({
   const vibPhaseY = seed * 3.4;
   const vibPhaseRot = seed * 1.7;
 
-  // Create canvas texture with Orbitron
+  // Create canvas texture with Space Grotesk (neubrutalist)
   useEffect(() => {
     if (!visible || (isShattering && shatterProgress >= 0.95)) {
       setTexture(null);
@@ -263,10 +263,10 @@ function JaggedLetter({
 
     const fontSize = char === " " ? 10 : 58;
 
-    // Use Orbitron if loaded, fallback to monospace
+    // Use Space Grotesk if loaded, fallback to sans-serif
     const fontFamily = fontLoaded
-      ? '"Orbitron", "SF Mono", "Courier New", monospace'
-      : '"Plus Jakarta Sans", "Inter", system-ui, sans-serif';
+      ? '"SpaceGrotesk", "Space Grotesk", "SF Mono", system-ui, sans-serif'
+      : '"Space Grotesk", system-ui, sans-serif';
 
     ctx.font = `700 ${fontSize}px ${fontFamily}`;
     ctx.textAlign = "center";
@@ -693,8 +693,8 @@ function AmbientParticles() {
     const colors = new Float32Array(count * 3);
     const palette = [
       new THREE.Color("#FFDE4D"),
-      new THREE.Color("#FF6B6B"),
-      new THREE.Color("#00FF66"),
+      new THREE.Color("#8B4049"),
+      new THREE.Color("#3B5998"),
       new THREE.Color("#FFFFFF"),
     ];
     for (let i = 0; i < count; i++) {
@@ -749,7 +749,7 @@ function AmbientParticles() {
 
 function computeLetterPositions(text: string): LetterData[] {
   const maxCharsPerLine = 26;
-  const letterWidth = 0.38; // Orbitron is wider — slightly more room
+  const letterWidth = 0.38; // Space Grotesk — slightly more room
   const spaceWidth = 0.22;
   const lineSpacing = 0.62;
   const letters: LetterData[] = [];
@@ -890,8 +890,8 @@ function Scene({
     <>
       <ambientLight intensity={0.4} />
       <pointLight position={[5, 5, 5]} intensity={0.8} color="#FFDE4D" />
-      <pointLight position={[-5, 3, 3]} intensity={0.5} color="#FF6B6B" />
-      <pointLight position={[0, -3, 2]} intensity={0.3} color="#00FF66" />
+      <pointLight position={[-5, 3, 3]} intensity={0.5} color="#8B4049" />
+      <pointLight position={[0, -3, 2]} intensity={0.3} color="#3B5998" />
       <color attach="background" args={["#0A0A0A"]} />
       <fog attach="fog" args={["#0A0A0A", 14, 30]} />
 
@@ -942,8 +942,8 @@ export default function ThoughtScene({
   shatterTrigger?: number;
   showText?: boolean;
 }) {
-  // Preload Orbitron font
-  useOrbitronFont();
+  // Preload Space Grotesk font for 3D canvas
+  useNeubrutalistFont();
 
   return (
     <div style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}>        <Canvas
