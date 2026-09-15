@@ -744,7 +744,7 @@ function AmbientParticles() {
 // ── Compute letter positions ──────────────────
 
 function computeLetterPositions(text: string): LetterData[] {
-  const maxCharsPerLine = 26;
+  const maxCharsPerLine = 42;
   const letterWidth = 0.38; // Space Grotesk — slightly more room
   const spaceWidth = 0.22;
   const lineSpacing = 0.62;

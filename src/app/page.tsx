@@ -22,6 +22,7 @@ import dynamic from "next/dynamic";
 import StreamingProgress from "@/components/StreamingProgress";
 import CognitiveGraphView from "@/components/CognitiveGraph";
 import PhysicsShatter from "@/components/PhysicsShatter";
+import SpecialistFinder from "@/components/SpecialistFinder";
 import { useStreamingAnalysis } from "@/lib/useStreamingAnalysis";
 import type { CognitiveGraph } from "@/lib/types";
 import {
@@ -95,6 +96,61 @@ export default function Home() {
   const [archive, setArchive] = useState<any[]>([]);
   const [shatterTrigger, setShatterTrigger] = useState(0);
   const [micActive, setMicActive] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  // ── Speech Recognition ──────────────────────────────
+  const toggleSpeechRecognition = useCallback(() => {
+    if (micActive) {
+      // Stop listening
+      recognitionRef.current?.stop();
+      setMicActive(false);
+      return;
+    }
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setAnalysisError("Speech recognition is not supported in this browser. Try Chrome or Edge.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    let finalTranscript = thought; // preserve existing text
+
+    recognition.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += (finalTranscript ? " " : "") + transcript;
+        } else {
+          interim = transcript;
+        }
+      }
+      setThought(finalTranscript + (interim ? " " + interim : ""));
+    };
+
+    recognition.onerror = (event: any) => {
+      console.warn("Speech recognition error:", event.error);
+      setMicActive(false);
+      if (event.error === "not-allowed") {
+        setAnalysisError("Microphone permission denied. Please allow microphone access and try again.");
+      }
+    };
+
+    recognition.onend = () => {
+      setMicActive(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setMicActive(true);
+    setAnalysisError("");
+  }, [micActive, thought]);
   const [muted, setMutedState] = useState(false);
   const [tension, setTension] = useState(0);
   const [showCanvasText, setShowCanvasText] = useState(true);
@@ -384,7 +440,7 @@ export default function Home() {
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       initAudio();
-                      setMicActive(!micActive);
+                      toggleSpeechRecognition();
                     }}
                     className={`w-full flex items-center gap-4 border-4 border-black px-6 py-5 text-left transition-all duration-150 ${
                       micActive
@@ -558,22 +614,19 @@ export default function Home() {
                   className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[90%] max-w-xl nb-card p-5"
                 >
                   <div className="flex items-center gap-2 mb-1.5">
-                    <AlertTriangle className="h-4 w-4 text-[var(--color-teal)]" strokeWidth={2.5} />
+                    <AlertTriangle className="h-4 w-4 text-[var(--color-coral)]" strokeWidth={2.5} />
                     <p
-                      className="text-[10px] uppercase tracking-widest text-[var(--color-teal)] font-bold"
+                      className="text-[10px] uppercase tracking-widest text-[var(--color-coral)] font-bold"
                       style={{ fontFamily: "var(--font-mono)" }}
                     >
-                      ⚡ Socratic Challenge
+                      Core Fallacy
                     </p>
                   </div>
                   <p
-                    className="text-sm text-black font-semibold leading-relaxed"
+                    className="text-sm text-black font-medium leading-relaxed"
                     style={{ fontFamily: "var(--font-display)" }}
                   >
-                    {streaming.state.socraticText || result?.socraticQuestion || result?.socratic_question}
-                    {!streaming.state.complete && streaming.state.socraticText && (
-                      <span className="inline-block w-0.5 h-4 bg-black ml-0.5 animate-pulse align-middle" />
-                    )}
+                    {streaming.state.coreFallacy || result?.coreFallacy || result?.core_fallacy}
                   </p>
                 </motion.div>
               </>
@@ -655,6 +708,15 @@ export default function Home() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Specialist Finder — visible after dissolution */}
+            {appState === "dissolution" && (
+              <div className="relative z-20 bg-[var(--color-bg)] border-t-4 border-black">
+                <SpecialistFinder
+                  cognitiveSummary={`Original thought: ${thought}. Distortions: ${(result?.distortions || []).join(", ")}. Core fallacy: ${result?.coreFallacy || result?.core_fallacy || ""}. Reframe: ${reframeResult?.improvedReframe || reframe}`}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -714,19 +776,22 @@ export default function Home() {
                 className="mb-4 nb-card p-4"
               >
                 <div className="flex items-center gap-2 mb-1.5">
-                  <AlertTriangle className="h-4 w-4 text-[var(--color-coral)]" strokeWidth={2.5} />
+                  <AlertTriangle className="h-4 w-4 text-[var(--color-teal)]" strokeWidth={2.5} />
                   <p
-                    className="text-[10px] uppercase tracking-widest text-[var(--color-coral)] font-bold"
+                    className="text-[10px] uppercase tracking-widest text-[var(--color-teal)] font-bold"
                     style={{ fontFamily: "var(--font-mono)" }}
                   >
-                    Core Fallacy
+                    ⚡ Socratic Challenge
                   </p>
                 </div>
                 <p
-                  className="text-sm text-black font-medium"
+                  className="text-sm text-black font-semibold"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  {streaming.state.coreFallacy || result?.coreFallacy || result?.core_fallacy}
+                  {streaming.state.socraticText || result?.socraticQuestion || result?.socratic_question}
+                  {!streaming.state.complete && streaming.state.socraticText && (
+                    <span className="inline-block w-0.5 h-4 bg-black ml-0.5 animate-pulse align-middle" />
+                  )}
                 </p>
               </motion.div>
 
