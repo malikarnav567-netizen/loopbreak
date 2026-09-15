@@ -416,6 +416,150 @@ body {
   border-radius: 0 !important;
 }
 
+/* ══════════════════════════════════════════════
+   DARK MODE — Inverse Neubrutalist palette
+   Toggle via .dark class on <html>
+   ══════════════════════════════════════════════ */
+html.dark {
+  --color-bg: #1A1A1E;
+  --color-bg-warm: #222228;
+  --color-card: #2A2A30;
+  --color-card-hover: #333338;
+
+  --color-black: #E8E8E8;
+  --color-text: #F0F0F0;
+  --color-text-muted: #999;
+
+  --color-yellow: #C4A035;
+  --color-yellow-hover: #A88A28;
+  --color-coral: #C75C64;
+  --color-coral-dark: #A04850;
+  --color-green: #5A7AB5;
+  --color-green-dark: #4A6A9A;
+  --color-neon-green: #6A8FC5;
+  --color-neon-coral: #C75C64;
+
+  --color-teal: #5A7AB5;
+  --color-amber: #D4A020;
+  --color-crimson: #FF6B7A;
+  --color-emerald: #20D981;
+
+  --color-border: #E8E8E8;
+  --color-border-thick: 4px;
+}
+
+html.dark body {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+html.dark .nb-card {
+  background: var(--color-card);
+  border-color: var(--color-black);
+  box-shadow: 6px 6px 0px 0px rgba(232,232,232,0.15);
+}
+html.dark .nb-card:hover {
+  box-shadow: 8px 8px 0px 0px rgba(232,232,232,0.2);
+}
+html.dark .nb-card-sm {
+  background: var(--color-card);
+  border-color: var(--color-black);
+  box-shadow: 4px 4px 0px 0px rgba(232,232,232,0.12);
+}
+
+html.dark .nb-input {
+  background: var(--color-card);
+  border-color: var(--color-black);
+  box-shadow: 6px 6px 0px 0px rgba(232,232,232,0.12);
+  color: var(--color-text);
+}
+html.dark .nb-input:focus {
+  background: #2F2F35;
+}
+
+html.dark .btn-primary {
+  border-color: var(--color-black);
+  box-shadow: 6px 6px 0px 0px rgba(232,232,232,0.12);
+}
+html.dark .btn-teal {
+  border-color: var(--color-black);
+  box-shadow: 6px 6px 0px 0px rgba(232,232,232,0.12);
+}
+html.dark .btn-ghost {
+  background: var(--color-card);
+  color: var(--color-text);
+  border-color: var(--color-black);
+  box-shadow: 4px 4px 0px 0px rgba(232,232,232,0.12);
+}
+
+html.dark .nb-badge-green {
+  border-color: var(--color-black);
+  box-shadow: 3px 3px 0px 0px rgba(232,232,232,0.12);
+}
+html.dark .nb-badge-coral {
+  border-color: var(--color-black);
+  box-shadow: 3px 3px 0px 0px rgba(232,232,232,0.12);
+}
+html.dark .nb-badge-yellow {
+  border-color: var(--color-black);
+  box-shadow: 3px 3px 0px 0px rgba(232,232,232,0.12);
+}
+
+html.dark .nb-distortion-badge {
+  border-color: var(--color-black);
+  box-shadow: 3px 3px 0px 0px rgba(232,232,232,0.12);
+}
+
+html.dark .nb-preset {
+  background: var(--color-card);
+  color: var(--color-text);
+  border-color: var(--color-black);
+  box-shadow: 3px 3px 0px 0px rgba(232,232,232,0.12);
+}
+html.dark .nb-preset:hover {
+  background: var(--color-yellow);
+}
+
+html.dark .nb-mic {
+  border-color: var(--color-black);
+  box-shadow: 6px 6px 0px 0px rgba(232,232,232,0.12);
+}
+html.dark .nb-mic-active {
+  border-color: var(--color-black);
+  box-shadow: 6px 6px 0px 0px rgba(232,232,232,0.12);
+}
+
+html.dark .nb-progress-track {
+  background: var(--color-bg-warm);
+  border-color: var(--color-black);
+}
+
+html.dark .react-flow__background {
+  background: var(--color-bg) !important;
+}
+html.dark .react-flow__minimap {
+  background: var(--color-card) !important;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+/* ── Dark mode: override hardcoded Tailwind colors ─── */
+html.dark .text-black { color: var(--color-text) !important; }
+html.dark .bg-black { background-color: var(--color-bg-warm) !important; }
+html.dark .bg-white { background-color: var(--color-card) !important; }
+html.dark .border-black { border-color: var(--color-black) !important; }
+html.dark [class*="text-white/70"] { color: rgba(240,240,240,0.7) !important; }
+html.dark [class*="text-white/80"] { color: rgba(240,240,240,0.8) !important; }
+html.dark [class*="bg-black/80"] { background-color: rgba(0,0,0,0.85) !important; }
+/* Don't override bg-black inside Three.js canvases */
+html.dark .thought-canvas-container .bg-black,
+html.dark canvas ~ .bg-black { background-color: #000 !important; }
+
+/* Nav separator line dark override */
+html.dark .nb-separator { background: var(--color-black); }
+
 /* ── Reduced motion ─────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   * {
