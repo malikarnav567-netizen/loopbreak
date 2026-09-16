@@ -734,14 +734,15 @@ export default function Home() {
               )}
             </AnimatePresence>
 
-            {/* Specialist Finder — visible after dissolution */}
-            {appState === "dissolution" && (
-              <div className="relative z-20 bg-[var(--color-bg)] border-t-4 border-black">
-                <SpecialistFinder
-                  cognitiveSummary={`Original thought: ${thought}. Distortions: ${(result?.distortions || []).join(", ")}. Core fallacy: ${result?.coreFallacy || result?.core_fallacy || ""}. Reframe: ${reframeResult?.improvedReframe || reframe}`}
-                />
-              </div>
-            )}
+          </div>
+        )}
+
+        {/* ═══════ SPECIALIST FINDER — Separate section below the canvas ═══════ */}
+        {appState === "dissolution" && (
+          <div className="relative z-20 mx-auto max-w-6xl bg-[var(--color-bg)] border-x-4 border-b-4 border-black">
+            <SpecialistFinder
+              cognitiveSummary={`Original thought: ${thought}. Distortions: ${(result?.distortions || []).join(", ")}. Core fallacy: ${result?.coreFallacy || result?.core_fallacy || ""}. Reframe: ${reframeResult?.improvedReframe || reframe}`}
+            />
           </div>
         )}
 
